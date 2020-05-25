@@ -12,6 +12,7 @@ class UserManager:
         self.messages_col = self.mydb["messages"]
         self.user_query = lambda name, disc: {"username": name + "#" + disc}
         self.user_t_query = lambda name, disc, t: {"username": name + "#" + disc, "tracking": t}
+        self.set_tracking = lambda track_b: {"$set": {"tracking": track_b}}
 
         print(self.my_client.list_database_names())
 
@@ -19,7 +20,7 @@ class UserManager:
         if self.userExists(author):
             print('turning on message tracking')
             query = self.user_query(author.name, author.discriminator)
-            tracking = {"$set": {"tracking": True}}
+            tracking: dict = self.set_tracking(True)
             self.tracked_col.update_one(query, tracking)
         else:
 
@@ -36,7 +37,7 @@ class UserManager:
         if self.userExists(author):
             print('turning off message tracking')
             query = self.user_query(author.name, author.discriminator)
-            tracking = {"$set": {"tracking": False}}
+            tracking: dict = self.set_tracking(False)
             self.tracked_col.update_one(query, tracking)
         else:
             user_enum: enumerate = enum(
