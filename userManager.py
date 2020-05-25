@@ -18,7 +18,7 @@ class UserManager:
             tracking = {"$set": {"tracking": True}}
             self.tracked_col.update_one(query, tracking)
         else:
-            userDict = {"username": author.name + '#' + author.discriminator, "tracking": True}
+            userDict = {"username": author.name + '#' + author.discriminator, "tracking": True, "userId": author.id}
             self.tracked_col.insert_one(userDict)
 
     def stopListening(self, author):
@@ -28,7 +28,7 @@ class UserManager:
             tracking = {"$set": {"tracking": False}}
             self.tracked_col.update_one(query, tracking)
         else:
-            userDict = {"username": author.name + '#' + author.discriminator, "tracking": False}
+            userDict = {"username": author.name + '#' + author.discriminator, "tracking": False, "userId": author.id}
             self.tracked_col.insert_one(userDict)
 
     def userExists(self, author):
