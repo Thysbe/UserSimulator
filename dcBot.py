@@ -1,12 +1,10 @@
 import discord
-import userManager
+from userManager import UserManager
 import env
-
-def init():
-    userManager.mongoInit()
 
 def runBot():
     TOKEN = env.TOKEN()
+    user_manager = UserManager()
 
     client = discord.Client()
 
@@ -18,14 +16,16 @@ def runBot():
         elif message.content.startswith('!hello'):
             await message.channel.send('I heard you!')
         elif message.content.startswith('!startListening'):
-            userManager.startListening(message.author)
+            user_manager.startListening(message.author)
         elif message.content.startswith('!stopListening'):
-            userManager.stopListening(message.author)
+            user_manager.stopListening(message.author)
         elif message.content.startswith('!simulate'):
             simulatedUser = parseTaggedUser(message.content)
-            # userManager.getMessages(simulatedUser)
+            # user_manager.getMessages(simulatedUser)
+        elif message.content.startswith('!testGet'):
+            user_manager.getMessages(message.author)
         else:
-            userManager.trackMessage(message)
+            user_manager.trackMessage(message)
 
     @client.event
     async def on_ready():
@@ -36,6 +36,7 @@ def runBot():
         print('------')
 
     client.run(TOKEN)
+
 
 def parseTaggedUser(messageContent):
     print(messageContent)

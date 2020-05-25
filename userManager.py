@@ -1,78 +1,65 @@
-import pandas as pd
 import pymongo
+from pymongo import MongoClient
 
 
-def mongoInit():
-    myclient = pymongo.MongoClient("mongodb://localhost:27017/")
-    mydb = myclient["discordText"]
-    print(myclient.list_database_names())
+class UserManager:
 
-def startListening(author):
-    myclient = pymongo.MongoClient("mongodb://localhost:27017/")
-    mydb = myclient["discordText"]
-    mycol = mydb["trackedUsers"]
-    if(userExists(author)):
-        print('turning on message tracking')
-        query = { "username": author.name + '#' + author.discriminator }
-        tracking = { "$set": {"tracking": True } }
-        mycol.update_one(query, tracking)
-    else:
-        userDict = { "username": author.name + '#' + author.discriminator, "tracking": True}
-        mycol.insert_one(userDict)
+    def __init__(self):
+        self.my_client: MongoClient = pymongo.MongoClient("mongodb://localhost:27017/")
+        self.mydb = self.my_client["discordText"]
+        self.tracked_col = self.mydb["trackedUsers"]
+        self.messages_col = self.mydb["messages"]
+        print(self.my_client.list_database_names())
 
-def stopListening(author):
-    myclient = pymongo.MongoClient("mongodb://localhost:27017/")
-    mydb = myclient["discordText"]
-    mycol = mydb["trackedUsers"]
-    if(userExists(author)):
-        print('turning off message tracking')
-        query = { "username": author.name + '#' + author.discriminator }
-        tracking = { "$set": {"tracking": False } }
-        mycol.update_one(query, tracking)
-    else:
-        userDict = { "username": author.name + '#' + author.discriminator, "tracking": False }
-        mycol.insert_one(userDict)
+    def startListening(self, author):
+        if self.userExists(author):
+            print('turning on message tracking')
+            query = {"username": author.name + '#' + author.discriminator}
+            tracking = {"$set": {"tracking": True}}
+            self.tracked_col.update_one(query, tracking)
+        else:
+            userDict = {"username": author.name + '#' + author.discriminator, "tracking": True}
+            self.tracked_col.insert_one(userDict)
 
-def userExists(author):
-    myclient = pymongo.MongoClient("mongodb://localhost:27017/")
-    mydb = myclient["discordText"]
-    mycol = mydb["trackedUsers"]
-    query = { "username": author.name + '#' + author.discriminator}
-    user = mycol.find(query)
-    if(user.count() == 1):
-        return True
-    elif(user.count() == 0):
-        return False
-    print("Error")
+    def stopListening(self, author):
+        if self.userExists(author):
+            print('turning off message tracking')
+            query = {"username": author.name + '#' + author.discriminator}
+            tracking = {"$set": {"tracking": False}}
+            self.tracked_col.update_one(query, tracking)
+        else:
+            userDict = {"username": author.name + '#' + author.discriminator, "tracking": False}
+            self.tracked_col.insert_one(userDict)
 
-def userIsTracking(author):
-    myclient = pymongo.MongoClient("mongodb://localhost:27017/")
-    mydb = myclient["discordText"]
-    mycol = mydb["trackedUsers"]
-    query = { "username": author.name + '#' + author.discriminator, "tracking": True}
-    user = mycol.find(query)
-    if(user.count() == 1):
-        return True
-    else:
-        return False
+    def userExists(self, author):
+        query = {"username": author.name + '#' + author.discriminator}
+        user = self.tracked_col.find(query)
+        if user.count() == 1:
+            return True
+        elif user.count() == 0:
+            return False
+        print("Error")
 
-def trackMessage(message):
-    if(userIsTracking(message.author)):
-        print("Storing message")
-        myclient = pymongo.MongoClient("mongodb://localhost:27017/")
-        mydb = myclient["discordText"]
-        mycol = mydb["messages"]
-        query = { "username": message.author.name + '#' + message.author.discriminator, "message": message.content}
-        mycol.insert_one(query)
+    def userIsTracking(self, author):
+        query = {"username": author.name + '#' + author.discriminator, "tracking": True}
+        user = self.tracked_col.find(query)
+        if user.count() == 1:
+            return True
+        else:
+            return False
 
-    else:
-        print("Ignoring message")
+    def trackMessage(self, message):
+        if self.userIsTracking(message.author):
+            print("Storing message")
+            username = message.author.name + '#' + message.author.discriminator
+            # {'$push': {"messages": message.content}})
+            self.tracked_col.update({'username': username}, {'$push': {'messages': message.content}})
+        else:
+            print("Ignoring message")
 
-def getMessages(author):
-    myclient = pymongo.MongoClient("mongodb://localhost:27017/")
-    mydb = myclient["discordText"]
-    mycol = mydb["messages"]
-    query = { "username": author.name + '#' + author.discriminator }
-    messages = mycol.find(query)
-    print(messages)
-    return messages  
+    def getMessages(self, author):
+        query = {"username": author.name + '#' + author.discriminator}
+        user = self.tracked_col.find(query)
+        for message in user[0].messages:
+            print(message)
+        return user[0].messages
