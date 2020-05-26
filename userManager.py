@@ -16,29 +16,39 @@ class UserManager:
 
         print(self.my_client.list_database_names())
 
-    def startListening(self, author):
-        if self.userExists(author):
-            print('turning on message tracking')
-            query = self.user_query(author.name, author.discriminator)
-            tracking: dict = self.set_tracking(True)
-            self.tracked_col.update_one(query, tracking)
-        else:
+    def create_user(self, author, t_bool):
+        user_enum: enumerate = enum(
+            {
+            "username": author.name + '#' + author.discriminator,
+            "tracking": t_bool,
+            "userId": author.id
+             }
+        )
+        self.tracked_col.insert_one(user_enum)
 
-            user_enum: enumerate = enum(
-                {
-                    "username": author.name + '#' + author.discriminator,
-                    "tracking": True,
-                    "userId": author.id
-                }
-            )
-            self.tracked_col.insert_one(user_enum)
+    def update_tracking(self, author,t_bool):
+        if t_bool:
+            print('turning on message tracking')
+        elif not t_bool:
+            print('turning off message tracking')
+        query = self.user_query(author.name, author.discriminator)
+        tracking: dict = self.set_tracking(t_bool)
+        self.tracked_col.update_one(query, tracking)
+
+    def startListening(self, author, p_level: int):
+        if p_level == 1:
+
+        elif p_level == 2:
+
+        elif p_level == 3:
+            if self.userExists(author):
+                self.update_tracking(True)
+            else:
+                self.create_user(self, author, True)
 
     def stopListening(self, author):
         if self.userExists(author):
-            print('turning off message tracking')
-            query = self.user_query(author.name, author.discriminator)
-            tracking: dict = self.set_tracking(False)
-            self.tracked_col.update_one(query, tracking)
+            self.update_tracking(False)
         else:
             user_enum: enumerate = enum(
                 {
