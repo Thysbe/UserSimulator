@@ -16,7 +16,7 @@ class UserManager:
 
         print(self.my_client.list_database_names())
 
-    def create_user(self, author, t_bool) -> None:
+    def create_user(self, author, t_bool: bool) -> None:
         user_enum: enumerate = enum(
             {
             "username": author.name + '#' + author.discriminator,
