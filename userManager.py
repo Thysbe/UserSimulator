@@ -39,6 +39,7 @@ class UserManager:
         if p_level == 1:
 
         elif p_level == 2:
+            self
 
         elif p_level == 3:
             if self.userExists(author):
@@ -50,14 +51,7 @@ class UserManager:
         if self.userExists(author):
             self.update_tracking(False)
         else:
-            user_enum: enumerate = enum(
-                {
-                    "username": author.name + '#' + author.discriminator,
-                    "tracking": False,
-                    "userId": author.id
-                }
-            )
-            self.tracked_col.insert_one(user_enum)
+            self.create_user(author, False)
 
     def userExists(self, author):
         query = self.user_query(author.name, author.discriminator)
