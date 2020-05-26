@@ -43,13 +43,13 @@ class UserManager:
 
         elif p_level == 3:
             if self.userExists(author):
-                self.update_tracking(True)
+                self.update_tracking(author, True)
             else:
-                self.create_user(self, author, True)
+                self.create_user(author, True)
 
     def stopListening(self, author) -> None:
         if self.userExists(author):
-            self.update_tracking(False)
+            self.update_tracking(author, False)
         else:
             self.create_user(author, False)
 
