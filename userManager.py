@@ -16,7 +16,7 @@ class UserManager:
 
         print(self.my_client.list_database_names())
 
-    def create_user(self, author, t_bool):
+    def create_user(self, author, t_bool) -> None:
         user_enum: enumerate = enum(
             {
             "username": author.name + '#' + author.discriminator,
@@ -26,7 +26,7 @@ class UserManager:
         )
         self.tracked_col.insert_one(user_enum)
 
-    def update_tracking(self, author,t_bool):
+    def update_tracking(self, author, t_bool: bool) -> None:
         if t_bool:
             print('turning on message tracking')
         elif not t_bool:
@@ -35,7 +35,7 @@ class UserManager:
         tracking: dict = self.set_tracking(t_bool)
         self.tracked_col.update_one(query, tracking)
 
-    def startListening(self, author, p_level: int):
+    def startListening(self, author, p_level: int) -> None:
         if p_level == 1:
 
         elif p_level == 2:
@@ -47,13 +47,13 @@ class UserManager:
             else:
                 self.create_user(self, author, True)
 
-    def stopListening(self, author):
+    def stopListening(self, author) -> None:
         if self.userExists(author):
             self.update_tracking(False)
         else:
             self.create_user(author, False)
 
-    def userExists(self, author):
+    def userExists(self, author) -> bool:
         query = self.user_query(author.name, author.discriminator)
         user = self.tracked_col.find(query)
         if user.count() == 1:
@@ -62,7 +62,7 @@ class UserManager:
             return False
         print("Error")
 
-    def userIsTracking(self, author):
+    def userIsTracking(self, author) -> bool:
         query = self.user_t_query(author.name, author.discriminaotr, True)
         user = self.tracked_col.find(query)
         if user.count() == 1:
@@ -70,7 +70,7 @@ class UserManager:
         else:
             return False
 
-    def trackMessage(self, message):
+    def trackMessage(self, message) -> None:
         if self.userIsTracking(message.author):
             print("Storing message")
             username = message.author.name + '#' + message.author.discriminator
@@ -79,7 +79,7 @@ class UserManager:
         else:
             print("Ignoring message")
 
-    def getMessages(self, author):
+    def getMessages(self, author) -> str:
         query = self.user_query(author.name, author.discriminator)
         user = self.tracked_col.find(query)
         for message in user[0].messages:
