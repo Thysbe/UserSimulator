@@ -58,7 +58,7 @@ class UserManager:
         print("Error")
 
     def userIsTracking(self, author) -> bool:
-        query = self.user_t_query(author.name, author.discriminaotr, True)
+        query = self.user_t_query(author.name, author.discriminator, True)
         user = self.tracked_col.find(query)
         if user.count() == 1:
             return True
