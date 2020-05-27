@@ -1,6 +1,6 @@
 import discord
 from userManager import UserManager
-from simulator import Simulator
+from simulator import simulateUser
 from messageUtil import parseTaggedUser
 import env
 
@@ -23,10 +23,9 @@ def runBot():
             user_manager.stopListening(message.author)
         elif message.content.startswith('!simulate'):
             simulatedUser = parseTaggedUser(message)
-            simulatedMessage = Simulator.simulateUser(simulatedUser)
+            messages = user_manager.getMessages(simulatedUser)
+            simulatedMessage = simulateUser(messages)
             await message.channel.send(simulatedMessage)
-        elif message.content.startswith('!testGet'):
-            user_manager.getMessages(message.author)
         else:
             user_manager.trackMessage(message)
 

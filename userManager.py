@@ -57,9 +57,13 @@ class UserManager:
         else:
             print("Ignoring message")
 
-    def getMessages(self, author):
-        query = {"username": author.name + '#' + author.discriminator}
+    def getMessages(self, userId):
+        query = {'userId': userId}
+        print(userId)
+        print(query)
         user = self.tracked_col.find(query)
+        print(query)
+        print(user)
         for message in user[0].messages:
             print(message)
         return user[0].messages
