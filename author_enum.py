@@ -6,4 +6,4 @@ class AuthorEnum(Enum):
         self.author = author
         self.username = author.name + '#' + author.discriminator
         self.tracking = t_bool
-        self.userId = self.author.id,
+        self.userId = author.id
