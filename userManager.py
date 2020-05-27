@@ -1,3 +1,4 @@
+
 import pymongo
 from pymongo import MongoClient
 
@@ -9,30 +10,57 @@ class UserManager:
         self.mydb = self.my_client["discordText"]
         self.tracked_col = self.mydb["trackedUsers"]
         self.messages_col = self.mydb["messages"]
+        self.user_query = lambda name, disc: {"username": name + "#" + disc}
+        self.user_t_query = lambda name, disc, t: {"username": name + "#" + disc, "tracking": t}
+        self.set_tracking = lambda track_b: {"$set": {"tracking": track_b}}
+
         print(self.my_client.list_database_names())
 
-    def startListening(self, author):
-        if self.userExists(author):
+    def create_user(self, author, t_bool: bool) -> None:
+        user_dict = {
+            "username": author.name + '#' + author.discriminator,
+            "tracking": t_bool,
+            "userId": author.id
+            # "activities"    = author.activities
+            # "activity"    = author.activity
+            # "avatar"    = author.avatar
+            # "bot"    = author.bot
+            # "joined_at"    = author.joined_at
+            # "name"    = author.name
+            # "nick"    = author.nick
+            # "web_status"    = author.web_status
+        }
+        self.tracked_col.insert_one(user_dict)
+
+    def update_tracking(self, author, t_bool: bool) -> None:
+        if t_bool:
             print('turning on message tracking')
-            query = {"username": author.name + '#' + author.discriminator}
-            tracking = {"$set": {"tracking": True}}
-            self.tracked_col.update_one(query, tracking)
-        else:
-            userDict = {"username": author.name + '#' + author.discriminator, "tracking": True}
-            self.tracked_col.insert_one(userDict)
-
-    def stopListening(self, author):
-        if self.userExists(author):
+        elif not t_bool:
             print('turning off message tracking')
-            query = {"username": author.name + '#' + author.discriminator}
-            tracking = {"$set": {"tracking": False}}
-            self.tracked_col.update_one(query, tracking)
-        else:
-            userDict = {"username": author.name + '#' + author.discriminator, "tracking": False}
-            self.tracked_col.insert_one(userDict)
+        query = self.user_query(author.name, author.discriminator)
+        tracking: dict = self.set_tracking(t_bool)
+        self.tracked_col.update_one(query, tracking)
 
-    def userExists(self, author):
-        query = {"username": author.name + '#' + author.discriminator}
+    def startListening(self, author) -> None:
+        #        if p_level == 1:
+        #
+        #
+        #        elif p_level == 2:
+        #
+        #        elif p_level == 3:
+        if self.userExists(author):
+            self.update_tracking(author, True)
+        else:
+            self.create_user(author, True)
+
+    def stopListening(self, author) -> None:
+        if self.userExists(author):
+            self.update_tracking(author, False)
+        else:
+            self.create_user(author, False)
+
+    def userExists(self, author) -> bool:
+        query = self.user_query(author.name, author.discriminator)
         user = self.tracked_col.find(query)
         if user.count() == 1:
             return True
@@ -40,15 +68,15 @@ class UserManager:
             return False
         print("Error")
 
-    def userIsTracking(self, author):
-        query = {"username": author.name + '#' + author.discriminator, "tracking": True}
+    def userIsTracking(self, author) -> bool:
+        query = self.user_t_query(author.name, author.discriminator, True)
         user = self.tracked_col.find(query)
         if user.count() == 1:
             return True
         else:
             return False
 
-    def trackMessage(self, message):
+    def trackMessage(self, message) -> None:
         if self.userIsTracking(message.author):
             print("Storing message")
             username = message.author.name + '#' + message.author.discriminator
@@ -57,8 +85,8 @@ class UserManager:
         else:
             print("Ignoring message")
 
-    def getMessages(self, author):
-        query = {"username": author.name + '#' + author.discriminator}
+    def getMessages(self, author) -> str:
+        query = self.user_query(author.name, author.discriminator)
         user = self.tracked_col.find(query)
         for message in user[0].messages:
             print(message)

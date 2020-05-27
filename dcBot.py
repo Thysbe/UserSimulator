@@ -1,6 +1,9 @@
 import discord
 from userManager import UserManager
+from simulator import Simulator
+from messageUtil import parseTaggedUser
 import env
+
 
 def runBot():
     TOKEN = env.TOKEN()
@@ -20,8 +23,9 @@ def runBot():
         elif message.content.startswith('!stopListening'):
             user_manager.stopListening(message.author)
         elif message.content.startswith('!simulate'):
-            simulatedUser = parseTaggedUser(message.content)
-            # user_manager.getMessages(simulatedUser)
+            simulatedUser = parseTaggedUser(message)
+            simulatedMessage = Simulator.simulateUser(simulatedUser)
+            await message.channel.send(simulatedMessage)
         elif message.content.startswith('!testGet'):
             user_manager.getMessages(message.author)
         else:
@@ -36,7 +40,3 @@ def runBot():
         print('------')
 
     client.run(TOKEN)
-
-
-def parseTaggedUser(messageContent):
-    print(messageContent)
