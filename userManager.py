@@ -21,14 +21,14 @@ class UserManager:
             "username": author.name + '#' + author.discriminator,
             "tracking": t_bool,
             "userId": author.id
-            #    activities
-            #    activity
-            #    avatar
-            #    bot
-            #    joined_at
-            #    name
-            #    nick
-            #    web_status
+            # "activities"    = author.activities
+            # "activity"    = author.activity
+            # "avatar"    = author.avatar
+            # "bot"    = author.bot
+            # "joined_at"    = author.joined_at
+            # "name"    = author.name
+            # "nick"    = author.nick
+            # "web_status"    = author.web_status
         }
         self.tracked_col.insert_one(user_dict)
 
