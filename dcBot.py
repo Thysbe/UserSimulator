@@ -4,6 +4,7 @@ from simulator import Simulator
 from messageUtil import parseTaggedUser
 import env
 
+
 def runBot():
     TOKEN = env.TOKEN()
     user_manager = UserManager()

@@ -1,7 +1,6 @@
+
 import pymongo
 from pymongo import MongoClient
-
-from author_enum import AuthorEnum
 
 
 class UserManager:
@@ -18,8 +17,20 @@ class UserManager:
         print(self.my_client.list_database_names())
 
     def create_user(self, author, t_bool: bool) -> None:
-        user_enum = AuthorEnum(author, t_bool)
-        self.tracked_col.insert_one(user_enum)
+        user_dict = {
+            "username": author.name + '#' + author.discriminator,
+            "tracking": t_bool,
+            "userId": author.id
+            #    activities
+            #    activity
+            #    avatar
+            #    bot
+            #    joined_at
+            #    name
+            #    nick
+            #    web_status
+        }
+        self.tracked_col.insert_one(user_dict)
 
     def update_tracking(self, author, t_bool: bool) -> None:
         if t_bool:
@@ -30,7 +41,7 @@ class UserManager:
         tracking: dict = self.set_tracking(t_bool)
         self.tracked_col.update_one(query, tracking)
 
-    def startListening(self, author, p_level: int) -> None:
+    def startListening(self, author) -> None:
         #        if p_level == 1:
         #
         #
