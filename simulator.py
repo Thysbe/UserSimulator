@@ -1,5 +1,4 @@
 from userManager import UserManager
 
-class Simulator:
-    def simulateUser(user):
-        return('Hi! Im ' + user)
+def simulateUser(messages):
+    return "Hello " + messages[0]
