@@ -1,5 +1,3 @@
-from enum import Enum
-
 import pymongo
 from pymongo import MongoClient
 
@@ -12,8 +10,10 @@ class UserManager:
         self.tracked_col = self.mydb["trackedUsers"]
         self.messages_col = self.mydb["messages"]
         self.user_query = lambda name, disc: {"username": name + "#" + disc}
-        self.user_t_query = lambda name, disc, t: {"username": name + "#" + disc, "tracking": t}
-        self.set_tracking = lambda tracking_level, track_b: {"$set": {tracking_level: track_b}}
+        # t_l = tracking level
+        self.user_t_query = lambda name, disc, t_l, t: {"username": name + "#" + disc, str(t_l): t}
+        self.set_tracking = lambda t_l, track_b: {"$set": {t_l: track_b}}
+        self.tracking_level = ["tracking-low", "tracking-mid", "tracking"]
 
         print(self.my_client.list_database_names())
 
@@ -34,11 +34,11 @@ class UserManager:
         elif not t_bool:
             print('turning off message tracking')
         query = self.user_query(author.name, author.discriminator)
-        tracking: dict = self.set_tracking(tracking_level=t_l, track_b=t_bool)
+        tracking: dict = self.set_tracking(t_l, track_b=t_bool)
         self.tracked_col.update_one(query, tracking)
 
     def startListening(self, author, p_level) -> None:
-        if DegreeOfTracking.low == p_level:
+        if 1 == int(p_level):
             if self.userExists(author):
                 self.update_tracking(author,
                                      t_l="tracking_mid",
@@ -59,7 +59,7 @@ class UserManager:
                                  l_bool=True
                                  )
 
-        if DegreeOfTracking.mid == p_level:
+        if 2 == int(p_level):
             # we want lot and test to track messages
             if self.userExists(author):
                 self.update_tracking(author,
@@ -80,7 +80,7 @@ class UserManager:
                                  all_bool=False,
                                  m_bool=True,
                                  l_bool=False)
-        if DegreeOfTracking.high == p_level:
+        if 3 == int(p_level):
             # we want to track all messages
             if self.userExists(author):
                 self.update_tracking(author,
@@ -104,6 +104,14 @@ class UserManager:
     def stopListening(self, author) -> None:
         if self.userExists(author):
             self.update_tracking(author,
+                                 t_l="tracking_mid",
+                                 t_bool=False
+                                 )
+            self.update_tracking(author,
+                                 t_l="tracking_low",
+                                 t_bool=False
+                                 )
+            self.update_tracking(author,
                                  t_l="tracking",
                                  t_bool=False
                                  )
@@ -123,8 +131,10 @@ class UserManager:
             return False
         print("Error")
 
-    def userIsTracking(self, author) -> bool:
-        query = self.user_t_query(author.name, author.discriminator, True)
+    def userIsTracking(self, author, tracking_level) -> bool:
+        query = self.user_t_query(author.name,
+                                  author.discriminator,
+                                  tracking_level, True)
         user = self.tracked_col.find(query)
         if user.count() == 1:
             return True
@@ -132,13 +142,14 @@ class UserManager:
             return False
 
     def trackMessage(self, message) -> None:
-        if self.userIsTracking(message.author):
-            print("Storing message")
-            username = message.author.name + '#' + message.author.discriminator
-            # {'$push': {"messages": message.content}})
-            self.tracked_col.update({'username': username}, {'$push': {'messages': message.content}})
-        else:
-            print("Ignoring message")
+        for level in self.tracking_level:
+            if self.userIsTracking(message.author, level):
+                print("Storing message")
+                username = message.author.name + '#' + message.author.discriminator
+                # {'$push': {"messages": message.content}})
+                self.tracked_col.update({'username': username}, {'$push': {'messages': message.content}})
+            else:
+                print("Ignoring message")
 
     def getMessages(self, author) -> str:
         query = self.user_query(author.name, author.discriminator)
@@ -146,9 +157,3 @@ class UserManager:
         for message in user[0].messages:
             print(message)
         return user[0].messages
-
-
-class DegreeOfTracking(Enum):
-    low = 1
-    mid = 2
-    high = 3
