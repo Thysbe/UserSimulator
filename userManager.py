@@ -104,10 +104,10 @@ class UserManager:
     def stopListening(self, author) -> None:
         if self.userExists(author):
             for level in self.tracking_level:
-            self.update_tracking(author,
-                                 t_l=level,
-                                 t_bool=False
-                                 )
+                self.update_tracking(author,
+                                     t_l=level,
+                                     t_bool=False
+                                     )
         else:
             self.create_user(author,
                              all_bool=False,
