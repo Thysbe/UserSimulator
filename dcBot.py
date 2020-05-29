@@ -19,7 +19,7 @@ def runBot():
         elif message.content.startswith('!hello'):
             await message.channel.send('I heard you!')
         elif message.content.startswith('!startListening'):
-            # for console debugging we will and to ask user
+            # for console debugging we will neeed to ask user
             level = input("Please input a level of participation low 1-3 high")
             p = level
             user_manager.startListening(message.author, p_level=p)
