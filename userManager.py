@@ -13,46 +13,59 @@ class UserManager:
         self.messages_col = self.mydb["messages"]
         self.user_query = lambda name, disc: {"username": name + "#" + disc}
         self.user_t_query = lambda name, disc, t: {"username": name + "#" + disc, "tracking": t}
-        self.set_tracking = lambda track_b: {"$set": {"tracking": track_b}}
+        self.set_tracking = lambda tracking_level, track_b: {"$set": {tracking_level: track_b}}
 
         print(self.my_client.list_database_names())
 
-    def create_user(self, author, all_bool: bool,l_bool:bool, m_bool:bool) -> None:
+    def create_user(self, author, all_bool: bool, l_bool: bool, m_bool: bool) -> None:
         user_dict = {
             "username": author.name + '#' + author.discriminator,
             "tracking": all_bool,
             "userId": author.id,
+            "tracking_mid": m_bool,
             "tracking_low": l_bool,
-            "tracking_mid": m_bool
 
         }
         self.tracked_col.insert_one(user_dict)
 
-    def update_tracking(self, author, t_bool: bool) -> None:
+    def update_tracking(self, author, t_l: str, t_bool: bool) -> None:
         if t_bool:
             print('turning on message tracking')
         elif not t_bool:
             print('turning off message tracking')
         query = self.user_query(author.name, author.discriminator)
-        tracking: dict = self.set_tracking(t_bool)
+        tracking: dict = self.set_tracking(tracking_level=t_l, track_b=t_bool)
         self.tracked_col.update_one(query, tracking)
 
     def startListening(self, author) -> None:
         if DegreeOfTracking.low:
-            # we only want the test chanel to track their message
+            if self.userExists(author):
+                self.update_tracking(author,
+                                     t_l="tracking_low",
+                                     t_bool=True
+                                     )
+            else:
+                self.create_user(author,
+                                 all_bool=False,
+                                 m_bool=False,
+                                 l_bool=True)
+
         if DegreeOfTracking.mid:
             # we want lot and test to track messages
             if self.userExists(author):
-                self.update_tracking(author, True)
-                else:
+                self.update_tracking(author,
+                                     t_l="tracking_mid",
+                                     t_bool=True
+                                     )
+            else:
                 self.create_user(author,
                                  all_bool=True,
                                  m_bool=False,
                                  l_bool=False)
-                if DegreeOfTracking.high:
+        if DegreeOfTracking.high:
             # we want to track all messages
             if self.userExists(author):
-                self.update_tracking(author, True)
+                self.update_tracking(author, "tracking", True)
             else:
                 self.create_user(author,
                                  all_bool=True,
@@ -61,9 +74,16 @@ class UserManager:
 
     def stopListening(self, author) -> None:
         if self.userExists(author):
-            self.update_tracking(author, False)
+            self.update_tracking(author,
+                                 t_l="tracking",
+                                 t_bool=False
+                                 )
         else:
-            self.create_user(author, False)
+            self.create_user(author,
+                             all_bool=False,
+                             m_bool=False,
+                             l_bool=False
+                             )
 
     def userExists(self, author) -> bool:
         query = self.user_query(author.name, author.discriminator)
