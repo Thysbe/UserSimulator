@@ -37,35 +37,64 @@ class UserManager:
         tracking: dict = self.set_tracking(tracking_level=t_l, track_b=t_bool)
         self.tracked_col.update_one(query, tracking)
 
-    def startListening(self, author) -> None:
-        if DegreeOfTracking.low:
+    def startListening(self, author, p_level) -> None:
+        if DegreeOfTracking.low == p_level:
             if self.userExists(author):
+                self.update_tracking(author,
+                                     t_l="tracking_mid",
+                                     t_bool=False
+                                     )
                 self.update_tracking(author,
                                      t_l="tracking_low",
                                      t_bool=True
+                                     )
+                self.update_tracking(author,
+                                     t_l="tracking",
+                                     t_bool=False
                                      )
             else:
                 self.create_user(author,
                                  all_bool=False,
                                  m_bool=False,
-                                 l_bool=True)
+                                 l_bool=True
+                                 )
 
-        if DegreeOfTracking.mid:
+        if DegreeOfTracking.mid == p_level:
             # we want lot and test to track messages
             if self.userExists(author):
                 self.update_tracking(author,
                                      t_l="tracking_mid",
                                      t_bool=True
                                      )
+                self.update_tracking(author,
+                                     t_l="tracking_low",
+                                     t_bool=False
+                                     )
+                self.update_tracking(author,
+                                     t_l="tracking",
+                                     t_bool=False
+                                     )
+
             else:
                 self.create_user(author,
-                                 all_bool=True,
-                                 m_bool=False,
+                                 all_bool=False,
+                                 m_bool=True,
                                  l_bool=False)
-        if DegreeOfTracking.high:
+        if DegreeOfTracking.high == p_level:
             # we want to track all messages
             if self.userExists(author):
-                self.update_tracking(author, "tracking", True)
+                self.update_tracking(author,
+                                     t_l="tracking_mid",
+                                     t_bool=False
+                                     )
+                self.update_tracking(author,
+                                     t_l="tracking_low",
+                                     t_bool=False
+                                     )
+                self.update_tracking(author,
+                                     t_l="tracking",
+                                     t_bool=True
+                                     )
             else:
                 self.create_user(author,
                                  all_bool=True,
