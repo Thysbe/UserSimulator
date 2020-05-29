@@ -1,6 +1,8 @@
 import pymongo
 from pymongo import MongoClient
 
+from degree_enum import DegreeOfTracking
+
 
 class UserManager:
 
@@ -38,7 +40,7 @@ class UserManager:
         self.tracked_col.update_one(query, tracking)
 
     def startListening(self, author, p_level) -> None:
-        if 1 == int(p_level):
+        if int(DegreeOfTracking.LOW) == int(p_level):
             if self.userExists(author):
                 self.update_tracking(author,
                                      t_l="tracking_mid",
@@ -59,7 +61,7 @@ class UserManager:
                                  l_bool=True
                                  )
 
-        if 2 == int(p_level):
+        if int(DegreeOfTracking.MID) == int(p_level):
             # we want lot and test to track messages
             if self.userExists(author):
                 self.update_tracking(author,
@@ -80,7 +82,7 @@ class UserManager:
                                  all_bool=False,
                                  m_bool=True,
                                  l_bool=False)
-        if 3 == int(p_level):
+        if int(DegreeOfTracking.HIGH) == int(p_level):
             # we want to track all messages
             if self.userExists(author):
                 self.update_tracking(author,

@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import Enum, IntEnum
 
 
-class DegreeOfTracking(Enum):
-    low = 1
-    mid = 2
-    high = 3
+class DegreeOfTracking(IntEnum):
+    LOW = 1
+    MID = 2
+    HIGH = 3
