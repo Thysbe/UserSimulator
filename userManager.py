@@ -1,3 +1,4 @@
+from enum import Enum
 
 import pymongo
 from pymongo import MongoClient
@@ -16,19 +17,14 @@ class UserManager:
 
         print(self.my_client.list_database_names())
 
-    def create_user(self, author, t_bool: bool) -> None:
+    def create_user(self, author, all_bool: bool,l_bool:bool, m_bool:bool) -> None:
         user_dict = {
             "username": author.name + '#' + author.discriminator,
-            "tracking": t_bool,
-            "userId": author.id
-            # "activities"    = author.activities
-            # "activity"    = author.activity
-            # "avatar"    = author.avatar
-            # "bot"    = author.bot
-            # "joined_at"    = author.joined_at
-            # "name"    = author.name
-            # "nick"    = author.nick
-            # "web_status"    = author.web_status
+            "tracking": all_bool,
+            "userId": author.id,
+            "tracking_low": l_bool,
+            "tracking_mid": m_bool
+
         }
         self.tracked_col.insert_one(user_dict)
 
@@ -42,16 +38,26 @@ class UserManager:
         self.tracked_col.update_one(query, tracking)
 
     def startListening(self, author) -> None:
-        #        if p_level == 1:
-        #
-        #
-        #        elif p_level == 2:
-        #
-        #        elif p_level == 3:
-        if self.userExists(author):
-            self.update_tracking(author, True)
-        else:
-            self.create_user(author, True)
+        if DegreeOfTracking.low:
+            # we only want the test chanel to track their message
+        if DegreeOfTracking.mid:
+            # we want lot and test to track messages
+            if self.userExists(author):
+                self.update_tracking(author, True)
+                else:
+                self.create_user(author,
+                                 all_bool=True,
+                                 m_bool=False,
+                                 l_bool=False)
+                if DegreeOfTracking.high:
+            # we want to track all messages
+            if self.userExists(author):
+                self.update_tracking(author, True)
+            else:
+                self.create_user(author,
+                                 all_bool=True,
+                                 m_bool=False,
+                                 l_bool=False)
 
     def stopListening(self, author) -> None:
         if self.userExists(author):
@@ -91,3 +97,9 @@ class UserManager:
         for message in user[0].messages:
             print(message)
         return user[0].messages
+
+
+class DegreeOfTracking(Enum):
+    low = 1
+    mid = 2
+    high = 3
