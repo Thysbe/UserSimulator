@@ -4,6 +4,7 @@ from simulator import simulateUser
 from messageUtil import parseTaggedUser
 import env
 
+
 def runBot():
     TOKEN = env.TOKEN()
     user_manager = UserManager()
@@ -18,7 +19,10 @@ def runBot():
         elif message.content.startswith('!hello'):
             await message.channel.send('I heard you!')
         elif message.content.startswith('!startListening'):
-            user_manager.startListening(message.author)
+            # for console debugging
+            level = input("Please input a level of participation low 1-3 high")
+            p = level
+            user_manager.startListening(message.author, p_level=p)
         elif message.content.startswith('!stopListening'):
             user_manager.stopListening(message.author)
         elif message.content.startswith('!simulate'):
