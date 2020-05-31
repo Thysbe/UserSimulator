@@ -1,124 +1,46 @@
 import pymongo
 from pymongo import MongoClient
+from enum import Enum
 
-from degree_enum import DegreeOfTracking
+
+# class TrackingLevel(Enum):
+#    NONE: 0
+#    LIMITED: 1
+#    FULL: 2
+
+# class ChannelTrackingLevel(Enum):
+#    NOT_TRACKED: 0  # Channel doesn't store messages
+#    FULL_TRACKING: 1  # Channel stores messages from users with limited and full tracking
+#    LIMTED_TRACKING: 2  # Channel stores messages from users with full tracking
 
 
 class UserManager:
 
     def __init__(self):
-        self.my_client: MongoClient = pymongo.MongoClient("mongodb://localhost:27017/")
+        self.my_client: MongoClient = pymongo.MongoClient(
+            "mongodb://localhost:27017/")
         self.mydb = self.my_client["discordText"]
         self.tracked_col = self.mydb["trackedUsers"]
-        self.messages_col = self.mydb["messages"]
-        self.user_query = lambda name, disc: {"username": name + "#" + disc}
-        # t_l = tracking level
-        self.user_t_query = lambda name, disc, t_l, t: {"username": name + "#" + disc, str(t_l): t}
-        self.set_tracking = lambda t_l, track_b: {"$set": {t_l: track_b}}
-        self.tracking_level = ["tracking-low", "tracking-mid", "tracking"]
-
+        self.channels_col = self.mydb["channels"]
+        self.userTrackingLevels = ['NONE', 'LIMITED', 'FULL']
+        self.channelTrackingLevels = [
+            'NOT_TRACKED', 'FULL_TRACKING', 'LIMITED_TRACKING']
         print(self.my_client.list_database_names())
 
-    def create_user(self, author, all_bool: bool, l_bool: bool, m_bool: bool) -> None:
-        user_dict = {
-            "username": author.name + '#' + author.discriminator,
-            "tracking": all_bool,
-            "userId": author.id,
-            "tracking_mid": m_bool,
-            "tracking_low": l_bool,
-
-        }
-        self.tracked_col.insert_one(user_dict)
-
-    def update_tracking(self, author, t_l: str, t_bool: bool) -> None:
-        if t_bool:
-            print('turning on message tracking')
-        elif not t_bool:
-            print('turning off message tracking')
-        query = self.user_query(author.name, author.discriminator)
-        tracking: dict = self.set_tracking(t_l, track_b=t_bool)
-        self.tracked_col.update_one(query, tracking)
-
-    def startListening(self, author, p_level) -> None:
-        if int(DegreeOfTracking.LOW) == int(p_level):
-            if self.userExists(author):
-                self.update_tracking(author,
-                                     t_l="tracking_mid",
-                                     t_bool=False
-                                     )
-                self.update_tracking(author,
-                                     t_l="tracking_low",
-                                     t_bool=True
-                                     )
-                self.update_tracking(author,
-                                     t_l="tracking",
-                                     t_bool=False
-                                     )
-            else:
-                self.create_user(author,
-                                 all_bool=False,
-                                 m_bool=False,
-                                 l_bool=True
-                                 )
-
-        if int(DegreeOfTracking.MID) == int(p_level):
-            # we want lot and test to track messages
-            if self.userExists(author):
-                self.update_tracking(author,
-                                     t_l="tracking_mid",
-                                     t_bool=True
-                                     )
-                self.update_tracking(author,
-                                     t_l="tracking_low",
-                                     t_bool=False
-                                     )
-                self.update_tracking(author,
-                                     t_l="tracking",
-                                     t_bool=False
-                                     )
-
-            else:
-                self.create_user(author,
-                                 all_bool=False,
-                                 m_bool=True,
-                                 l_bool=False)
-        if int(DegreeOfTracking.HIGH) == int(p_level):
-            # we want to track all messages
-            if self.userExists(author):
-                self.update_tracking(author,
-                                     t_l="tracking_mid",
-                                     t_bool=False
-                                     )
-                self.update_tracking(author,
-                                     t_l="tracking_low",
-                                     t_bool=False
-                                     )
-                self.update_tracking(author,
-                                     t_l="tracking",
-                                     t_bool=True
-                                     )
-            else:
-                self.create_user(author,
-                                 all_bool=True,
-                                 m_bool=False,
-                                 l_bool=False)
-
-    def stopListening(self, author) -> None:
-        if self.userExists(author):
-            for level in self.tracking_level:
-                self.update_tracking(author,
-                                     t_l=level,
-                                     t_bool=False
-                                     )
+    def updateTrackingLevel(self, userId, trackingLevel, username):
+        if self.userExists(userId):
+            print('updating user record')
+            query = {"userId": userId}
+            tracking = {"$set": {"trackingLevel": trackingLevel}}
+            self.tracked_col.update_one(query, tracking)
         else:
-            self.create_user(author,
-                             all_bool=False,
-                             m_bool=False,
-                             l_bool=False
-                             )
+            print('creating user record')
+            userDict = {"trackingLevel": trackingLevel,
+                        "userId": userId, "username": username}
+            self.tracked_col.insert_one(userDict)
 
-    def userExists(self, author) -> bool:
-        query = self.user_query(author.name, author.discriminator)
+    def userExists(self, userId):
+        query = {"userId": userId}
         user = self.tracked_col.find(query)
         if user.count() == 1:
             return True
@@ -126,29 +48,82 @@ class UserManager:
             return False
         print("Error")
 
-    def userIsTracking(self, author, tracking_level) -> bool:
-        query = self.user_t_query(author.name,
-                                  author.discriminator,
-                                  tracking_level, True)
+    def getUserName(self, userId):
+        query = {"userId": userId}
         user = self.tracked_col.find(query)
-        if user.count() == 1:
-            return True
-        else:
-            return False
+        return user[0]['username']
 
-    def trackMessage(self, message) -> None:
-        for level in self.tracking_level:
-            if self.userIsTracking(message.author, level):
-                print("Storing message")
-                username = message.author.name + '#' + message.author.discriminator
-                # {'$push': {"messages": message.content}})
-                self.tracked_col.update({'username': username}, {'$push': {'messages': message.content}})
+    def userTrackingLevel(self, userId):
+        if(self.userExists(userId)):
+            query = {"userId": userId}
+            user = self.tracked_col.find(query)
+            return user[0]['trackingLevel']
+        return 'NONE'
+
+    # user tracking none - dont store message
+    # user tracking limted - store if channel is full tracking
+    # user tracking full - store if channel is not NOT_TRACKED
+    def trackMessage(self, message):
+        trackingLevel = self.userTrackingLevel(message.author.id)
+        channelTrackingLevel = self.channelTracking(message.channel.id)
+        if(trackingLevel == 'NONE'):
+            print("Ignoring message")
+            return
+        elif(trackingLevel == 'LIMITED'):
+            if(channelTrackingLevel == 'FULL_TRACKING'):
+                print("Storing Message")
+                self.storeMessage(message.author.id, message.content)
+                return
             else:
                 print("Ignoring message")
+                return
+        elif(trackingLevel == 'FULL'):
+            if(channelTrackingLevel == 'NOT_TRACKED'):
+                print("Ignoring message")
+                return
+            else:
+                print("Storing Message")
+                self.storeMessage(message.author.id, message.content)
+                return
+        else:
+            print("error tracking level not referenced")
 
-    def getMessages(self, author) -> str:
-        query = self.user_query(author.name, author.discriminator)
+    def storeMessage(self, userId, messageContent):
+        query = {'userId': userId}
+        operation = {'$push': {'messages': messageContent}}
+        self.tracked_col.update(query, operation)
+        return
+
+    # returns array of all users messages
+    def getMessages(self, userId):
+        query = {'userId': userId}
         user = self.tracked_col.find(query)
-        for message in user[0].messages:
-            print(message)
-        return user[0].messages
+        return user[0]['messages']
+
+    # if channel doesn't exist, return limted tracking
+    def channelTracking(self, channelId):
+        if(self.channelExists(channelId)):
+            query = {'channelId': channelId}
+            channel = self.channels_col.find(query)
+            return channel[0]['trackingLevel']
+        return 'LIMITED_TRACKING'
+
+    def updateChannelTracking(self, channelId, trackingLevel):
+        if self.channelExists(channelId):
+            print("channel exists, updating record")
+            query = {"channelId": channelId}
+            tracking = {"$set": {"trackingLevel": trackingLevel}}
+            self.channels_col.update_one(query, tracking)
+        else:
+            print("channel doesnt exist, creating record")
+            channel = {"trackingLevel": trackingLevel, "channelId": channelId}
+            self.channels_col.insert_one(channel)
+
+    def channelExists(self, channelId):
+        query = {"channelId": channelId}
+        channel = self.channels_col.find(query)
+        if channel.count() == 1:
+            return True
+        elif channel.count() == 0:
+            return False
+        print("Error")

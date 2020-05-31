@@ -1,3 +1,3 @@
-import dcBot as bot 
+import dcBot as bot
 
 bot.runBot()

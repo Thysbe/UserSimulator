@@ -1,19 +1,23 @@
+from userManager import UserManager
+from keras.callbacks import ModelCheckpoint
+from keras.utils import np_utils
+from keras.layers import Dense, Dropout, LSTM
+from keras.models import Sequential
+from nltk.corpus import stopwords
+from nltk.tokenize import RegexpTokenizer
 import numpy
 import sys
-from nltk.tokenize import RegexpTokenizer
-from nltk.corpus import stopwords
-from keras.models import Sequential
-from keras.layers import Dense, Dropout, LSTM
-from keras.utils import np_utils
-from keras.callbacks import ModelCheckpoint
+import nltk
+nltk.download('stopwords')
 
-from userManager import UserManager
 
 def simulateUser(messages):
     corpus = tokenizeMessages(messages)
-    return "Hello " + messages[0]
+    return "Hello " + corpus
 
 # takes an array of strings
+
+
 def tokenizeMessages(messages):
     corpus = ""
     for message in messages:
@@ -21,8 +25,10 @@ def tokenizeMessages(messages):
     corpus = corpus.lower()
     tokenizer = RegexpTokenizer(r'\w+')
     tokens = tokenizer.tokenize(corpus)
-    filtered = filter(lambda token: token not in stopwords.words('english'), tokens) #maybe we should remove this
+    filtered = filter(lambda token: token not in stopwords.words(
+        'english'), tokens)  # maybe we should remove this
     return " ".join(filtered)
+
 
 def convert_chars(corpus):
     chars = sorted(list(set(corpus)))
