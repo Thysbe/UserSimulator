@@ -1,7 +1,7 @@
 import pymongo
 from pymongo import MongoClient
 
-from degree_enum import DegreeOfTracking
+from enums import DegreeOfTracking, Levels
 
 
 class UserManager:
@@ -39,20 +39,21 @@ class UserManager:
         tracking: dict = self.set_tracking(t_l, track_b=t_bool)
         self.tracked_col.update_one(query, tracking)
 
-    def startListening(self, author, p_level) -> None:
-        if int(DegreeOfTracking.LOW) == int(p_level):
+    def user_update(self, author, degree):
+        if Levels.name == degree:
+
             if self.userExists(author):
                 self.update_tracking(author,
-                                     t_l="tracking_mid",
-                                     t_bool=False
-                                     )
-                self.update_tracking(author,
                                      t_l="tracking_low",
-                                     t_bool=True
+                                     t_bool=Levels.LOW.r_low()
                                      )
                 self.update_tracking(author,
-                                     t_l="tracking",
-                                     t_bool=False
+                                     t_l="tracking_mif",
+                                     t_bool=Levels.MID.r_mid()
+                                     )
+                self.update_tracking(author,
+                                     t_l="tracking.high",
+                                     t_bool=Levels.HIGH.r_High()
                                      )
             else:
                 self.create_user(author,
@@ -61,47 +62,25 @@ class UserManager:
                                  l_bool=True
                                  )
 
-        if int(DegreeOfTracking.MID) == int(p_level):
-            # we want lot and test to track messages
-            if self.userExists(author):
-                self.update_tracking(author,
-                                     t_l="tracking_mid",
-                                     t_bool=True
-                                     )
-                self.update_tracking(author,
-                                     t_l="tracking_low",
-                                     t_bool=False
-                                     )
-                self.update_tracking(author,
-                                     t_l="tracking",
-                                     t_bool=False
-                                     )
+    def startListening(self, author, p_level) -> None:
 
-            else:
-                self.create_user(author,
-                                 all_bool=False,
-                                 m_bool=True,
-                                 l_bool=False)
-        if int(DegreeOfTracking.HIGH) == int(p_level):
-            # we want to track all messages
+        if int(DegreeOfTracking.LOW) == int(p_level):
             if self.userExists(author):
-                self.update_tracking(author,
-                                     t_l="tracking_mid",
-                                     t_bool=False
-                                     )
-                self.update_tracking(author,
-                                     t_l="tracking_low",
-                                     t_bool=False
-                                     )
-                self.update_tracking(author,
-                                     t_l="tracking",
-                                     t_bool=True
-                                     )
+                self.user_update(author, DegreeOfTracking.LOW)
+        else:
+            self.create_user(author, all_bool=True, m_bool=False, l_bool=False)
+        if int(DegreeOfTracking.MID) == int(p_level):
+            if self.userExists(author):
+                self.user_update(author, DegreeOfTracking.MID)
             else:
-                self.create_user(author,
-                                 all_bool=True,
-                                 m_bool=False,
-                                 l_bool=False)
+                self.create_user(author, all_bool=True, m_bool=False, l_bool=False)
+        else:
+            self.create_user(author, all_bool=False, m_bool=True, l_bool=False)
+        if int(DegreeOfTracking.HIGH) == int(p_level):
+            if self.userExists(author):
+                self.user_update(author, DegreeOfTracking.HIGH)
+            else:
+                self.create_user(author, all_bool=True, m_bool=False, l_bool=False)
 
     def stopListening(self, author) -> None:
         if self.userExists(author):
